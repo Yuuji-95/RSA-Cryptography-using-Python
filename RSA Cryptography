@@ -27,40 +27,44 @@ Pseudo-code for RSA Decryption Program:
 7. End
 """
 
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import hashes
-import os
+import rsa
 
-def rsa_decrypt(ciphertext, private_key):
+def load_private_key(filepath):
+    """
+    Load an RSA private key from a file.
+    
+    Parameters:
+    filepath (str): The path to the private key file.
+
+    Returns:
+    rsa.PrivateKey: The loaded RSA private key.
+    """
+    with open(filepath, 'rb') as key_file:
+        private_key = rsa.PrivateKey.load_pkcs1(key_file.read())
+    return private_key
+
+def decrypt_with_rsa(ciphertext, private_key):
+    """
+    Decrypt a ciphertext using an RSA private key.
+
+    Parameters:
+    ciphertext (bytes): The encrypted data.
+    private_key (rsa.PrivateKey): The RSA private key for decryption.
+
+    Returns:
+    str: The decrypted plaintext, or None if decryption fails.
+    """
     try:
-        plaintext = private_key.decrypt(
-            ciphertext,
-            padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
-                label=None
-            )
-        )
-        return plaintext
+        # Decrypt the data with RSA using the private key
+        decrypted_message = rsa.decrypt(ciphertext, private_key)
+        return decrypted_message.decode('utf-8')
     except Exception as e:
-        print("Decryption error:", str(e))
+        print(f"Decryption failed: {e}")
         return None
 
 def main():
-    # Check if the key and ciphertext files exist
-    if not os.path.exists('prv.key') or not os.path.exists('cipher1.bin') or not os.path.exists('cipher2.bin'):
-        print("One or more required files are missing.")
-        return
-
-    # Load the private key from a PEM file
-    with open('prv.key', 'rb') as key_file:
-        private_key = serialization.load_pem_private_key(
-            key_file.read(),
-            password=None,  # Or your passphrase here if the key is encrypted
-            backend=default_backend()
-        )
+    # Load the private key
+    private_key = load_private_key('prv.key')
 
     # Read the ciphertexts from binary files
     with open('cipher1.bin', 'rb') as f:
@@ -68,18 +72,18 @@ def main():
     with open('cipher2.bin', 'rb') as f:
         cipher2 = f.read()
 
-    # Decrypt the ciphertexts
-    plaintext1 = rsa_decrypt(cipher1, private_key)
-    plaintext2 = rsa_decrypt(cipher2, private_key)
+    # Decrypt the ciphertexts using the loaded private key
+    decrypted_text1 = decrypt_with_rsa(cipher1, private_key)
+    decrypted_text2 = decrypt_with_rsa(cipher2, private_key)
 
-    # Check and print the decrypted plaintexts after converting bytes to string
-    if plaintext1:
-        print(f"Decrypted plaintext 1: {plaintext1.decode('utf-8')}")
+    # Print the results of decryption
+    if decrypted_text1:
+        print(f"Decrypted text 1: {decrypted_text1}")
     else:
         print("Failed to decrypt ciphertext 1.")
 
-    if plaintext2:
-        print(f"Decrypted plaintext 2: {plaintext2.decode('utf-8')}")
+    if decrypted_text2:
+        print(f"Decrypted text 2: {decrypted_text2}")
     else:
         print("Failed to decrypt ciphertext 2.")
 
