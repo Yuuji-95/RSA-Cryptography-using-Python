@@ -63,10 +63,8 @@ def decrypt_with_rsa(ciphertext, private_key):
         return None
 
 def main():
-    # Load the private key
     private_key = load_private_key('prv.key')
 
-    # Read the ciphertexts from binary files
     with open('cipher1.bin', 'rb') as f:
         cipher1 = f.read()
     with open('cipher2.bin', 'rb') as f:
